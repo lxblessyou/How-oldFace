@@ -1,7 +1,6 @@
 package com.example.admin.how_old;
 
 import android.app.Activity;
-import android.app.Instrumentation;
 import android.content.Intent;
 import android.database.Cursor;
 import android.graphics.Bitmap;
@@ -15,7 +14,10 @@ import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.TextView;
-import android.widget.Toast;
+
+import com.facepp.error.FaceppParseException;
+
+import org.json.JSONObject;
 
 
 public class MainActivity extends Activity implements View.OnClickListener {
@@ -23,6 +25,7 @@ public class MainActivity extends Activity implements View.OnClickListener {
     private Button mPickBtn, mDetectBtn;
     private ImageView mImg;
     private FrameLayout mFl;
+    private Bitmap mBitmap = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -34,7 +37,7 @@ public class MainActivity extends Activity implements View.OnClickListener {
 
     private void initEnvent() {
         mPickBtn.setOnClickListener(this);
-        mPickBtn.setOnClickListener(this);
+        mDetectBtn.setOnClickListener(this);
     }
 
     private void initView() {
@@ -55,7 +58,32 @@ public class MainActivity extends Activity implements View.OnClickListener {
                 startActivityForResult(intent, Constants.PICK);
                 break;
             case R.id.btn_detect:
+//                Toast.makeText(this,"detect",Toast.LENGTH_LONG).show();
+                mFl.setVisibility(View.VISIBLE);
+                String json = Detector.detect(mBitmap, new Detector.CallBackListener() {
+                    @Override
+                    public void success(JSONObject jsonObject) {
+                        Log.i("tag", jsonObject + "");
 
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                mFl.setVisibility(View.GONE);
+                            }
+                        });
+                    }
+
+                    @Override
+                    public void error(FaceppParseException e) {
+                        Log.i("tag", e + "");
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                mFl.setVisibility(View.GONE);
+                            }
+                        });
+                    }
+                });
                 break;
             default:
                 break;
@@ -73,8 +101,8 @@ public class MainActivity extends Activity implements View.OnClickListener {
                 cursor.moveToFirst();
                 int columnIndex = cursor.getColumnIndex(MediaStore.Images.ImageColumns.DATA);
                 String imgPath = cursor.getString(columnIndex);
-                Bitmap bitmap = reSetSize(imgPath);
-                mImg.setImageBitmap(bitmap);
+                mBitmap = reSetSize(imgPath);
+                mImg.setImageBitmap(mBitmap);
                 mTv.setText("detect -->");
                 cursor.close();
             }
